@@ -72,8 +72,9 @@
                             <input type="number" id="uang_awal" value="5000000" step="500000" class="w-full mt-1 p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
                         </div>
                         <div>
-                            <label for="uang_tambahan_tahunan" class="text-sm font-medium text-slate-700">Dana Tambahan per Tahun (Rp)</label>
-                            <input type="number" id="uang_tambahan_tahunan" value="1200000" step="100000" class="w-full mt-1 p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                            <!-- UPDATED: Changed label and id to reflect monthly input -->
+                            <label for="uang_tambahan_bulanan" class="text-sm font-medium text-slate-700">Dana Tambahan per Bulan (Rp)</label>
+                            <input type="number" id="uang_tambahan_bulanan" value="500000" step="100000" class="w-full mt-1 p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
                         </div>
                     </div>
                 </div>
@@ -115,8 +116,8 @@
                         <hr>
                          <p class="text-sm font-bold text-amber-700">🪙 Investasi Emas</p>
                          <div>
-                            <label for="exp_return_emas_rate" class="text-xs font-medium text-slate-600">Ekspektasi Return (<span id="return-emas-val">6.0</span>%)</label>
-                            <input type="range" id="exp_return_emas_rate" min="0" max="15" value="6" step="0.5" class="w-full mt-1">
+                            <label for="exp_return_emas_rate" class="text-xs font-medium text-slate-600">Ekspektasi Return (<span id="return-emas-val">9.5</span>%)</label>
+                            <input type="range" id="exp_return_emas_rate" min="0" max="15" value="9.5" step="0.5" class="w-full mt-1">
                         </div>
                          <div>
                             <label for="vol_emas" class="text-xs font-medium text-slate-600">Volatilitas/Risiko (<span id="vol-emas-val">8.0</span>%)</label>
@@ -147,11 +148,15 @@
             <section class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
                 <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-md">
                     <h3 class="font-semibold text-lg mb-4">Perjalanan Nilai Investasi (Riil)</h3>
-                    <canvas id="lineChart"></canvas>
+                    <div class="relative h-80 md:h-96">
+                        <canvas id="lineChart"></canvas>
+                    </div>
                 </div>
                 <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
                     <h3 class="font-semibold text-lg mb-4">Perbandingan Hasil Akhir</h3>
-                    <canvas id="barChart"></canvas>
+                    <div class="relative h-80 md:h-96">
+                        <canvas id="barChart"></canvas>
+                    </div>
                 </div>
             </section>
             
@@ -185,7 +190,8 @@
         let lineChartInstance, barChartInstance;
         const inputs = {
             uangAwal: document.getElementById('uang_awal'),
-            uangTambahan: document.getElementById('uang_tambahan_tahunan'),
+            // UPDATED: Changed ID to monthly
+            uangTambahan: document.getElementById('uang_tambahan_bulanan'),
             tahun: document.getElementById('tahun'),
             inflasi: document.getElementById('inflasi_rate'),
             bungaTabungan: document.getElementById('bunga_tabungan_rate'),
@@ -226,7 +232,7 @@
             let result = '';
             if (tahun > 0) result += `${tahun} tahun `;
             if (bulan > 0) result += `${bulan} bulan`;
-            return result.trim();
+            return result.trim() || "Kurang dari 1 bulan";
         };
 
         // --- SIMULATION & UI LOGIC ---
@@ -234,6 +240,7 @@
             // 1. Get all input values
             const p = {
                 uangAwal: parseFloat(inputs.uangAwal.value) || 0,
+                // This is now the monthly amount
                 uangTambahan: parseFloat(inputs.uangTambahan.value) || 0,
                 tahun: parseInt(inputs.tahun.value),
                 inflasi: parseFloat(inputs.inflasi.value) / 100,
@@ -246,8 +253,6 @@
             
             // Update slider value displays
             Object.keys(valueSpans).forEach(key => {
-                // The keys in valueSpans and inputs for the sliders match.
-                // e.g., valueSpans['inflasi'] and inputs['inflasi']
                 const inputElement = inputs[key];
                 if (inputElement) {
                    valueSpans[key].textContent = key === 'tahun' ? inputElement.value : parseFloat(inputElement.value).toFixed(1);
@@ -257,10 +262,13 @@
             // 2. Initialize arrays and run simulation
             const yearsAxis = Array.from({ length: p.tahun + 1 }, (_, i) => i);
             const nominal = { tabungan: [p.uangAwal], saham: [p.uangAwal], emas: [p.uangAwal] };
+            // UPDATED: Calculate total annual addition from monthly input
+            const tambahanTahunan = p.uangTambahan * 12;
+
             for (let y = 1; y <= p.tahun; y++) {
-                nominal.tabungan.push((nominal.tabungan[y - 1] + p.uangTambahan) * (1 + p.bungaTabungan));
-                nominal.saham.push((nominal.saham[y - 1] + p.uangTambahan) * (1 + generateNormalRandom(p.returnSaham, p.volSaham)));
-                nominal.emas.push((nominal.emas[y - 1] + p.uangTambahan) * (1 + generateNormalRandom(p.returnEmas, p.volEmas)));
+                nominal.tabungan.push((nominal.tabungan[y - 1] + tambahanTahunan) * (1 + p.bungaTabungan));
+                nominal.saham.push((nominal.saham[y - 1] + tambahanTahunan) * (1 + generateNormalRandom(p.returnSaham, p.volSaham)));
+                nominal.emas.push((nominal.emas[y - 1] + tambahanTahunan) * (1 + generateNormalRandom(p.returnEmas, p.volEmas)));
             }
 
             // 3. Calculate real values (adjust for inflation)
@@ -340,6 +348,7 @@
             const target = parseFloat(goalCalculator.targetInput.value) || 0;
             const p = {
                 uangAwal: parseFloat(inputs.uangAwal.value) || 0,
+                // This is already the monthly amount
                 uangTambahan: parseFloat(inputs.uangTambahan.value) || 0,
                 bungaTabungan: parseFloat(inputs.bungaTabungan.value) / 100,
                 returnSaham: parseFloat(inputs.returnSaham.value) / 100,
@@ -351,7 +360,8 @@
                 let currentValue = p.uangAwal;
                 let months = 0;
                 const monthlyRate = Math.pow(1 + rate, 1/12) - 1;
-                const monthlyAddition = p.uangTambahan / 12;
+                // UPDATED: monthlyAddition is now directly the monthly input
+                const monthlyAddition = p.uangTambahan;
 
                 while (currentValue < target && months < 600) { // Max 50 years
                     currentValue = currentValue * (1 + monthlyRate) + monthlyAddition;
