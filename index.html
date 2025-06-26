@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Keuangan & Kalkulator Target</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 6px;
+            background: #e2e8f0; border-radius: 5px;
+            outline: none; opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px;
+            background: #0ea5e9; cursor: pointer;
+            border-radius: 50%; border: 2px solid white;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px; height: 20px;
+            background: #0ea5e9; cursor: pointer;
+            border-radius: 50%; border: 2px solid white;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar for Inputs -->
+        <aside class="w-full md:w-1/3 lg:w-1/4 bg-white p-6 border-r border-slate-200">
+            <h2 class="text-xl font-bold text-slate-900 flex items-center mb-6">
+                <i data-lucide="settings-2" class="mr-2 text-sky-500"></i>
+                Parameter Simulasi
+            </h2>
+
+            <div class="space-y-6">
+                <!-- Dana Awal & Rutin -->
+                <div>
+                    <h3 class="font-semibold text-slate-600 mb-2">Dana Awal & Rutin</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="uang_awal" class="text-sm font-medium text-slate-700">Modal Awal (Rp)</label>
+                            <input type="number" id="uang_awal" value="5000000" step="500000" class="w-full mt-1 p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label for="uang_tambahan_tahunan" class="text-sm font-medium text-slate-700">Dana Tambahan per Tahun (Rp)</label>
+                            <input type="number" id="uang_tambahan_tahunan" value="1200000" step="100000" class="w-full mt-1 p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kondisi Umum -->
+                <div>
+                    <h3 class="font-semibold text-slate-600 mb-2">Kondisi Umum</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="tahun" class="text-sm font-medium text-slate-700">Durasi Proyeksi (<span id="tahun-val">10</span> tahun)</label>
+                            <input type="range" id="tahun" min="1" max="30" value="10" class="w-full mt-1">
+                        </div>
+                        <div>
+                            <label for="inflasi_rate" class="text-sm font-medium text-slate-700">Inflasi (<span id="inflasi-val">4.0</span>%)</label>
+                            <input type="range" id="inflasi_rate" min="0" max="10" value="4" step="0.1" class="w-full mt-1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opsi Investasi -->
+                <div>
+                    <h3 class="font-semibold text-slate-600 mb-2">Asumsi Opsi Investasi</h3>
+                    <div class="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <p class="text-sm font-bold text-sky-700">🏦 Tabungan Bank</p>
+                        <div>
+                            <label for="bunga_tabungan_rate" class="text-xs font-medium text-slate-600">Bunga per Tahun (<span id="bunga-tabungan-val">1.5</span>%)</label>
+                            <input type="range" id="bunga_tabungan_rate" min="0" max="5" value="1.5" step="0.1" class="w-full mt-1">
+                        </div>
+                        <hr>
+                        <p class="text-sm font-bold text-green-700">📈 Investasi Saham/RD</p>
+                        <div>
+                            <label for="exp_return_saham_rate" class="text-xs font-medium text-slate-600">Ekspektasi Return (<span id="return-saham-val">12.0</span>%)</label>
+                            <input type="range" id="exp_return_saham_rate" min="0" max="25" value="12" step="0.5" class="w-full mt-1">
+                        </div>
+                         <div>
+                            <label for="vol_saham" class="text-xs font-medium text-slate-600">Volatilitas/Risiko (<span id="vol-saham-val">18.0</span>%)</label>
+                            <input type="range" id="vol_saham" min="0" max="40" value="18" step="0.5" class="w-full mt-1">
+                        </div>
+                        <hr>
+                         <p class="text-sm font-bold text-amber-700">🪙 Investasi Emas</p>
+                         <div>
+                            <label for="exp_return_emas_rate" class="text-xs font-medium text-slate-600">Ekspektasi Return (<span id="return-emas-val">6.0</span>%)</label>
+                            <input type="range" id="exp_return_emas_rate" min="0" max="15" value="6" step="0.5" class="w-full mt-1">
+                        </div>
+                         <div>
+                            <label for="vol_emas" class="text-xs font-medium text-slate-600">Volatilitas/Risiko (<span id="vol-emas-val">8.0</span>%)</label>
+                            <input type="range" id="vol_emas" min="0" max="20" value="8" step="0.5" class="w-full mt-1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center text-xs text-slate-400 pt-4">
+                    © 2025 Simulasi Keuangan Mahasiswa
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="w-full md:w-2/3 lg:w-3/4 p-8">
+            <header>
+                <h1 class="text-3xl font-bold text-slate-900">Dasbor Proyeksi & Target Keuangan</h1>
+                <p class="mt-2 text-slate-600">Lihat proyeksi pertumbuhan aset Anda dan hitung waktu untuk mencapai target finansial.</p>
+            </header>
+
+            <!-- Metrics -->
+            <section id="metrics" class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <!-- Metrics will be inserted here by JS -->
+            </section>
+            
+            <!-- Charts -->
+            <section class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-semibold text-lg mb-4">Perjalanan Nilai Investasi (Riil)</h3>
+                    <canvas id="lineChart"></canvas>
+                </div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-semibold text-lg mb-4">Perbandingan Hasil Akhir</h3>
+                    <canvas id="barChart"></canvas>
+                </div>
+            </section>
+            
+             <!-- Time to Goal Calculator -->
+            <section id="goal-calculator" class="mt-8 bg-white p-8 rounded-xl shadow-md">
+                <h2 class="text-2xl font-bold text-slate-900 flex items-center">
+                    <i data-lucide="calculator" class="mr-3 text-sky-500"></i>
+                    Kalkulator Waktu Mencapai Target
+                </h2>
+                <p class="text-slate-600 mt-2 mb-6">Masukkan jumlah target yang Anda inginkan (misal: harga laptop, DP rumah) untuk mengetahui estimasi waktu pencapaiannya.</p>
+                
+                <div class="flex flex-col sm:flex-row items-center gap-4">
+                    <div class="w-full sm:w-2/3">
+                        <label for="target_harga" class="text-sm font-medium text-slate-700">Jumlah Target (Rp)</label>
+                        <input type="number" id="target_harga" value="20000000" step="1000000" class="w-full mt-1 p-3 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-lg">
+                    </div>
+                    <button id="calculate-goal-btn" class="w-full sm:w-1/3 mt-3 sm:mt-6 bg-sky-500 text-white font-bold py-3 px-6 rounded-md hover:bg-sky-600 transition-colors flex items-center justify-center">
+                        <i data-lucide="play" class="mr-2 h-5 w-5"></i> Hitung
+                    </button>
+                </div>
+
+                <div id="goal-results" class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
+                    <!-- Goal results will be injected here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // --- DOM ELEMENT REFERENCES ---
+        let lineChartInstance, barChartInstance;
+        const inputs = {
+            uangAwal: document.getElementById('uang_awal'),
+            uangTambahan: document.getElementById('uang_tambahan_tahunan'),
+            tahun: document.getElementById('tahun'),
+            inflasi: document.getElementById('inflasi_rate'),
+            bungaTabungan: document.getElementById('bunga_tabungan_rate'),
+            returnSaham: document.getElementById('exp_return_saham_rate'),
+            volSaham: document.getElementById('vol_saham'),
+            returnEmas: document.getElementById('exp_return_emas_rate'),
+            volEmas: document.getElementById('vol_emas'),
+        };
+        const valueSpans = {
+            tahun: document.getElementById('tahun-val'),
+            inflasi: document.getElementById('inflasi-val'),
+            bungaTabungan: document.getElementById('bunga-tabungan-val'),
+            returnSaham: document.getElementById('return-saham-val'),
+            volSaham: document.getElementById('vol-saham-val'),
+            returnEmas: document.getElementById('return-emas-val'),
+            volEmas: document.getElementById('vol-emas-val'),
+        };
+        const goalCalculator = {
+            targetInput: document.getElementById('target_harga'),
+            calculateBtn: document.getElementById('calculate-goal-btn'),
+            resultsContainer: document.getElementById('goal-results'),
+        };
+
+        // --- HELPER FUNCTIONS ---
+        const generateNormalRandom = (mean, stdDev) => {
+            let u1 = 0, u2 = 0;
+            while (u1 === 0) u1 = Math.random();
+            while (u2 === 0) u2 = Math.random();
+            const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+            return z0 * stdDev + mean;
+        };
+        const formatRupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+        const formatWaktu = (totalBulan) => {
+            if (totalBulan === Infinity) return "Sangat Lama";
+            if (totalBulan <= 0) return "Sudah Tercapai";
+            const tahun = Math.floor(totalBulan / 12);
+            const bulan = Math.round(totalBulan % 12);
+            let result = '';
+            if (tahun > 0) result += `${tahun} tahun `;
+            if (bulan > 0) result += `${bulan} bulan`;
+            return result.trim();
+        };
+
+        // --- SIMULATION & UI LOGIC ---
+        function runProjectionSimulation() {
+            // 1. Get all input values
+            const p = {
+                uangAwal: parseFloat(inputs.uangAwal.value) || 0,
+                uangTambahan: parseFloat(inputs.uangTambahan.value) || 0,
+                tahun: parseInt(inputs.tahun.value),
+                inflasi: parseFloat(inputs.inflasi.value) / 100,
+                bungaTabungan: parseFloat(inputs.bungaTabungan.value) / 100,
+                returnSaham: parseFloat(inputs.returnSaham.value) / 100,
+                volSaham: parseFloat(inputs.volSaham.value) / 100,
+                returnEmas: parseFloat(inputs.returnEmas.value) / 100,
+                volEmas: parseFloat(inputs.volEmas.value) / 100,
+            };
+            
+            // Update slider value displays
+            Object.keys(valueSpans).forEach(key => {
+                // The keys in valueSpans and inputs for the sliders match.
+                // e.g., valueSpans['inflasi'] and inputs['inflasi']
+                const inputElement = inputs[key];
+                if (inputElement) {
+                   valueSpans[key].textContent = key === 'tahun' ? inputElement.value : parseFloat(inputElement.value).toFixed(1);
+                }
+            });
+
+            // 2. Initialize arrays and run simulation
+            const yearsAxis = Array.from({ length: p.tahun + 1 }, (_, i) => i);
+            const nominal = { tabungan: [p.uangAwal], saham: [p.uangAwal], emas: [p.uangAwal] };
+            for (let y = 1; y <= p.tahun; y++) {
+                nominal.tabungan.push((nominal.tabungan[y - 1] + p.uangTambahan) * (1 + p.bungaTabungan));
+                nominal.saham.push((nominal.saham[y - 1] + p.uangTambahan) * (1 + generateNormalRandom(p.returnSaham, p.volSaham)));
+                nominal.emas.push((nominal.emas[y - 1] + p.uangTambahan) * (1 + generateNormalRandom(p.returnEmas, p.volEmas)));
+            }
+
+            // 3. Calculate real values (adjust for inflation)
+            const riil = {};
+            for (const key in nominal) {
+                riil[key] = nominal[key].map((val, i) => val / Math.pow(1 + p.inflasi, i));
+            }
+
+            // 4. Update the main UI
+            updateProjectionUI(yearsAxis, riil);
+        }
+
+        function updateProjectionUI(years, data) {
+            const finalValues = {
+                Saham: data.saham[data.saham.length - 1],
+                Emas: data.emas[data.emas.length - 1],
+                Tabungan: data.tabungan[data.tabungan.length - 1],
+            };
+
+            // Update Metrics
+            const metricsContainer = document.getElementById('metrics');
+            const icons = { Saham: 'trending-up', Emas: 'gem', Tabungan: 'landmark' };
+            const colors = { Saham: 'green', Emas: 'amber', Tabungan: 'sky' };
+            metricsContainer.innerHTML = '';
+            for (const key in finalValues) {
+                metricsContainer.innerHTML += `
+                <div class="bg-white p-4 rounded-xl shadow-md flex items-center">
+                    <div class="p-3 bg-${colors[key]}-100 rounded-lg mr-4">
+                        <i data-lucide="${icons[key]}" class="text-${colors[key]}-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">${key}</p>
+                        <p class="text-xl font-bold text-slate-900">${formatRupiah(finalValues[key])}</p>
+                    </div>
+                </div>`;
+            }
+            lucide.createIcons();
+
+            // Update Charts
+            if (lineChartInstance) lineChartInstance.destroy();
+            if (barChartInstance) barChartInstance.destroy();
+
+            const chartOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${formatRupiah(c.raw)}` } } },
+                scales: { y: { ticks: { callback: (v) => formatRupiah(v) } } }
+            };
+            
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            lineChartInstance = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [
+                        { label: 'Saham', data: data.saham, borderColor: '#16a34a', backgroundColor: '#16a34a33', tension: 0.1 },
+                        { label: 'Emas', data: data.emas, borderColor: '#f59e0b', backgroundColor: '#f59e0b33', tension: 0.1 },
+                        { label: 'Tabungan', data: data.tabungan, borderColor: '#0ea5e9', backgroundColor: '#0ea5e933', tension: 0.1 },
+                    ]
+                },
+                options: chartOptions
+            });
+
+            const sortedFinalValues = Object.entries(finalValues).sort(([, a], [, b]) => b - a);
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            barChartInstance = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: sortedFinalValues.map(item => item[0]),
+                    datasets: [{ label: 'Nilai Riil Akhir', data: sortedFinalValues.map(item => item[1]), backgroundColor: sortedFinalValues.map(item => colors[item[0]]) }]
+                },
+                options: { ...chartOptions, indexAxis: 'y' }
+            });
+        }
+
+        // --- GOAL CALCULATION LOGIC ---
+        function calculateTimeToGoal() {
+            const target = parseFloat(goalCalculator.targetInput.value) || 0;
+            const p = {
+                uangAwal: parseFloat(inputs.uangAwal.value) || 0,
+                uangTambahan: parseFloat(inputs.uangTambahan.value) || 0,
+                bungaTabungan: parseFloat(inputs.bungaTabungan.value) / 100,
+                returnSaham: parseFloat(inputs.returnSaham.value) / 100,
+                returnEmas: parseFloat(inputs.returnEmas.value) / 100,
+            };
+
+            const calculate = (rate) => {
+                if (p.uangAwal >= target) return 0;
+                let currentValue = p.uangAwal;
+                let months = 0;
+                const monthlyRate = Math.pow(1 + rate, 1/12) - 1;
+                const monthlyAddition = p.uangTambahan / 12;
+
+                while (currentValue < target && months < 600) { // Max 50 years
+                    currentValue = currentValue * (1 + monthlyRate) + monthlyAddition;
+                    months++;
+                }
+                return months >= 600 ? Infinity : months;
+            };
+
+            const results = {
+                Saham: calculate(p.returnSaham),
+                Emas: calculate(p.returnEmas),
+                Tabungan: calculate(p.bungaTabungan),
+            };
+            displayGoalResults(results);
+        }
+
+        function displayGoalResults(results) {
+            const container = goalCalculator.resultsContainer;
+            container.innerHTML = '';
+            container.classList.remove('hidden');
+
+            const icons = { Saham: 'trending-up', Emas: 'gem', Tabungan: 'landmark' };
+            const colors = { Saham: 'green', Emas: 'amber', Tabungan: 'sky' };
+
+            const sortedResults = Object.entries(results).sort(([, a], [, b]) => a - b);
+            
+            sortedResults.forEach(([key, value]) => {
+                const card = `
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center animate-fade-in">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="p-3 bg-${colors[key]}-100 rounded-full mr-3">
+                            <i data-lucide="${icons[key]}" class="text-${colors[key]}-600"></i>
+                        </div>
+                        <h4 class="text-lg font-semibold text-slate-800">${key}</h4>
+                    </div>
+                    <p class="text-3xl font-bold text-${colors[key]}-600">${formatWaktu(value)}</p>
+                    <p class="text-sm text-slate-500 mt-1">Estimasi Waktu</p>
+                </div>
+                `;
+                container.innerHTML += card;
+            });
+            lucide.createIcons();
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            Object.values(inputs).forEach(input => {
+                input.addEventListener('input', runProjectionSimulation);
+            });
+            goalCalculator.calculateBtn.addEventListener('click', calculateTimeToGoal);
+            
+            runProjectionSimulation();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
